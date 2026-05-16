@@ -1,3 +1,8 @@
+/*
+Samuel Firegedil
+ETS1292/17
+*/
+
 #pragma once
 
 #include <string>

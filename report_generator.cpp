@@ -1,3 +1,8 @@
+/*
+Samuel Firegedil
+ETS1292/17
+*/
+
 #include "report_generator.h"
 #include <sstream>
 
