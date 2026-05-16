@@ -4,7 +4,6 @@ controller.cpp
 controller.h       
 */
 
-
 #include "controller.h"
 
 #include <algorithm>
