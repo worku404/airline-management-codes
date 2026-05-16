@@ -1,3 +1,8 @@
+/*
+Zeadonay Wejebu
+ETS1609/17
+*/
+
 #include "validator.h"
 
 #include <cctype>
