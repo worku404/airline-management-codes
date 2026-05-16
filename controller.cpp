@@ -17,6 +17,7 @@
 #include "reservation_engine.h"
 #include "revenue_service.h"
 #include "validator.h"
+#include "report_generator.h"
 
 namespace {
 constexpr int kSecondsPerHour = 3600;
@@ -621,11 +622,11 @@ void print_report_summary() {
         print_status(audit.status, "Revenue audit");
     }
 
-    std::cout << "\nOperations summary:\n"
-              << "  Reservations:   " << reservations << "\n"
-              << "  Checked-in:     " << checked_in << "\n"
-              << "  Boarded:        " << boarded << "\n"
-              << "  Delayed flights:" << ' ' << delayed << "\n";
+    OperationalReport report = generate_operational_report(reservations, checked_in, boarded, delayed);
+    if (report.status.success) {
+        std::cout << "\nOperations summary:\n  "
+                  << report.report << "\n";
+    }
 }
 
 void handle_search_command() {

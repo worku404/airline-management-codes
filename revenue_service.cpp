@@ -78,15 +78,3 @@ RevenueAuditResult audit_revenue(const std::vector<Money>& booking_totals, long 
     }
     return {computed, recorded_total, make_success()};
 }
-
-OperationalReport generate_operational_report(int total_reservations,
-                                              int total_checked_in,
-                                              int total_boarded,
-                                              int delayed_flights) {
-    std::ostringstream report;
-    report << "Reservations: " << total_reservations
-           << ", Checked-in: " << total_checked_in
-           << ", Boarded: " << total_boarded
-           << ", Delayed flights: " << delayed_flights;
-    return {report.str(), make_success()};
-}
