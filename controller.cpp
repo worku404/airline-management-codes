@@ -26,6 +26,10 @@ controller.h
 #include "report_generator.h"
 
 namespace {
+constexpr const char* GREEN = "\033[32m";
+constexpr const char* BLUE = "\033[34m";
+constexpr const char* RED = "\033[31m";
+constexpr const char* RESET = "\033[0m";
 constexpr int kSecondsPerHour = 3600;
 constexpr int kSecondsPerDay = 24 * kSecondsPerHour;
 constexpr int kRecentPnrLimit = 8;
@@ -52,13 +56,13 @@ void print_hint(const std::string& text) {
 
 void print_help() {
     print_section_title("Airline Management CLI");
-    std::cout << "Type a command name to open guided mode, or enter the full command directly.\n\n"
+    std::cout <<GREEN<< "Type a command name to open guided mode, or enter the full command directly.\n\n"<<RESET
               << "Guided actions:\n"
-              << "  search                         Search flights interactively\n"
+              <<BLUE<< "  search                         Search flights interactively\n"
               << "  book                           Create a booking with prompts\n"
               << "  checkin                        Check in a passenger with prompts\n"
               << "  status                         Update a flight status with prompts\n"
-              << "  report                         Show revenue and operations summary\n\n"
+              << "  report                         Show revenue and operations summary\n\n"<<RESET
               << "Direct commands:\n"
               << "  book <flight_id> <class> <first> <last> <passport> [seat]\n"
               << "  checkin <pnr> [baggage_count]\n"
