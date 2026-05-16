@@ -1,5 +1,7 @@
 #include "flight_manager.h"
 
+#include <cctype>
+
 // ============================================================================
 // PRIVATE DATA & HELPERS (Global Flight Registry)
 // ============================================================================
@@ -8,12 +10,45 @@ namespace {
     // Global storage for all flights in the system
     std::vector<Flight> g_flights;
 
-    // Valid flight statuses
-   bool is_valid_status(const std::string& status) {
-    return status == "On Time" || 
-           status == "Delayed" || 
-           status == "Boarding" || 
-           status == "Cancelled";
+std::string canonicalize_status(std::string status) {
+    std::string normalized;
+    normalized.reserve(status.size());
+    bool previous_was_space = false;
+
+    for (char ch : status) {
+        if (std::isspace(static_cast<unsigned char>(ch)) || ch == '-' || ch == '_') {
+            if (!normalized.empty() && !previous_was_space) {
+                normalized.push_back(' ');
+            }
+            previous_was_space = true;
+            continue;
+        }
+
+        normalized.push_back(static_cast<char>(std::toupper(static_cast<unsigned char>(ch))));
+        previous_was_space = false;
+    }
+
+    if (!normalized.empty() && normalized.back() == ' ') {
+        normalized.pop_back();
+    }
+
+    if (normalized == "ON TIME") {
+        return "On Time";
+    }
+    if (normalized == "DELAYED") {
+        return "Delayed";
+    }
+    if (normalized == "BOARDING") {
+        return "Boarding";
+    }
+    if (normalized == "CANCELLED") {
+        return "Cancelled";
+    }
+    return "";
+}
+
+bool is_valid_status(const std::string& status) {
+    return !canonicalize_status(status).empty();
 }
 }
 
@@ -205,9 +240,10 @@ Flight* find_flight_mutable(const std::string& flight_id) {
 
 Status set_flight_status(const std::string& flight_id, 
                          const std::string& new_status) {
+    const std::string canonical_status = canonicalize_status(new_status);
     
     // STEP 1: Validate new status is allowed
-    if (!is_valid_status(new_status)) {
+    if (canonical_status.empty()) {
         return make_failure(
             "STATUS_INVALID",
             "Invalid flight status transition"
@@ -226,7 +262,7 @@ Status set_flight_status(const std::string& flight_id,
     }
 
     // STEP 4: Now we CAN modify it because it's non-const
-    flight_ptr->status = new_status;
+    flight_ptr->status = canonical_status;
     
     return make_success();
 }

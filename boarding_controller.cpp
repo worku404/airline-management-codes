@@ -9,6 +9,15 @@
 namespace {
 int g_total_checkins = 0;
 
+std::string normalize_pnr_input(std::string pnr_id) {
+    pnr_id = to_upper(pnr_id);
+    const std::string prefix = "PNR-";
+    if (pnr_id.rfind(prefix, 0) == 0) {
+        return pnr_id.substr(prefix.size());
+    }
+    return pnr_id;
+}
+
 int boarding_group_for(SeatClass seat_class) {
     switch (seat_class) {
         case SeatClass::First:
@@ -34,13 +43,14 @@ std::string gate_for(const std::string& flight_id) {
 }
 
 CheckInResult process_check_in(const std::string& pnr_id, int baggage_count) {
-    if (!is_valid_pnr(pnr_id)) {
+    const std::string normalized_pnr = normalize_pnr_input(pnr_id);
+    if (!is_valid_pnr(normalized_pnr)) {
         return {{}, make_failure("CHECKIN_PNR_INVALID", "Invalid PNR format"), baggage_count};
     }
     if (!is_valid_baggage_count(baggage_count)) {
         return {{}, make_failure("CHECKIN_BAGGAGE_INVALID", "Invalid baggage count"), baggage_count};
     }
-    const ReservationRecord* record = find_reservation(pnr_id);
+    const ReservationRecord* record = find_reservation(normalized_pnr);
     if (record == nullptr) {
         return {{}, make_failure("CHECKIN_PNR_MISSING", "PNR not found"), baggage_count};
     }
@@ -48,9 +58,9 @@ CheckInResult process_check_in(const std::string& pnr_id, int baggage_count) {
         return {{}, make_failure("CHECKIN_STATE_INVALID", "Reservation not eligible for check-in"), baggage_count};
     }
 
-    BoardingPass pass{pnr_id, gate_for(record->request.flight_id), boarding_group_for(record->request.preferred_class)};
+    BoardingPass pass{normalized_pnr, gate_for(record->request.flight_id), boarding_group_for(record->request.preferred_class)};
 
-    Status status = update_reservation_status(pnr_id, ReservationStatus::CheckedIn);
+    Status status = update_reservation_status(normalized_pnr, ReservationStatus::CheckedIn);
     if (!status.success) {
         return {{}, status, baggage_count};
     }
