@@ -7,8 +7,10 @@
 #include <sstream>
 #include <vector>
 
+#include "airport_registry.h"                    // ⭐ NEW
 #include "boarding_controller.h"
 #include "flight_manager.h"
+#include "interactive_search_helper.h"          // ⭐ NEW
 #include "inventory_service.h"
 #include "reservation_engine.h"
 #include "revenue_service.h"
@@ -23,7 +25,7 @@ void print_help() {
     std::cout << "Commands:\n"
               << "  :help                          Show this help\n"
               << "  :quit                          Exit the system\n"
-              << "  search <origin> <dest>         Search flights\n"
+              << "  search                         Search flights\n"
               << "  book <flight_id> <class> [first last passport seat]\n"
               << "  checkin <pnr> [baggage_count]  Check in by PNR\n"
               << "  status <flight_id> <status>    Update flight status\n"
@@ -99,21 +101,26 @@ void run_repl() {
             continue;
         }
 
+        // ====================================================================
+        // SEARCH COMMAND - NOW WITH INTERACTIVE MODE ⭐
+        // ====================================================================
         if (tokens[0] == "search") {
-            if (tokens.size() < 3) {
-                print_status(make_failure("SEARCH_ARGS", "Usage: search <origin> <dest>"), "Search");
-                continue;
-            }
-            SearchCriteria criteria{tokens[1], tokens[2], std::time(nullptr) - kSecondsPerHour, now_plus_days(30)};
+            // Start interactive search flow
+            SearchCriteria criteria = get_interactive_search();
+            
+            // Call flight_manager to search
             FlightQueryResult result = search_flights(criteria);
+            
             if (!result.status.success) {
                 print_status(result.status, "Search");
                 continue;
             }
+            
             if (result.available_flights.empty()) {
                 std::cout << "Result: No flights found\n";
                 continue;
             }
+            
             std::cout << "Result: " << result.available_flights.size() << " flights\n";
             for (const auto& flight : result.available_flights) {
                 std::cout << "  " << flight.flight_id << " " << flight.origin_iata << "->" << flight.destination_iata

@@ -29,8 +29,11 @@ struct FlightQueryResult {
 };
 
 Status add_flight(const Flight& flight);
+
 FlightQueryResult search_flights(const SearchCriteria& criteria);
+
 const Flight* find_flight(const std::string& flight_id);
+
 Status set_flight_status(const std::string& flight_id, const std::string& new_status);
 const std::vector<Flight>& get_flight_registry();
 int count_flights_with_status(const std::string& status);

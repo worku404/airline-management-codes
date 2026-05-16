@@ -56,7 +56,7 @@ BookingResult create_booking(const BookingRequest& request) {
         return {"", {0, "USD"}, make_failure("BOOKING_PASSENGER_MISSING", "Passenger name is required")};
     }
     if (!is_valid_passport(request.passenger.passport_number)) {
-        return {"", {0, "USD"}, make_failure("BOOKING_PASSPORT_INVALID", "Invalid passport number")};
+        return {"", {0, "USD"}, make_failure("BOOKING_PASSPORT_INVALID", "Invalid passport number, Must be upper and only numbers!")};
     }
 
     const Flight* flight = find_flight(request.flight_id);

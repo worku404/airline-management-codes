@@ -29,13 +29,6 @@ bool will_add_overflow(long long lhs, long long rhs) {
     }
     return false;
 }
-
-std::string to_upper(std::string value) {
-    std::transform(value.begin(), value.end(), value.begin(), [](unsigned char ch) {
-        return static_cast<char>(std::toupper(ch));
-    });
-    return value;
-}
 }
 
 Status add_money(const Money& lhs, const Money& rhs, Money& out) {

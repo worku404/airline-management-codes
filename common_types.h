@@ -27,3 +27,9 @@ Status subtract_money(const Money& lhs, const Money& rhs, Money& out);
 
 Status parse_seat_class(const std::string& input, SeatClass& out);
 std::string seat_class_to_string(SeatClass seat_class);
+
+
+inline std::string to_upper(std::string value) {
+    for (auto& i: value)  i = static_cast<char>(toupper(static_cast<unsigned char>(i)));
+    return value;
+}
