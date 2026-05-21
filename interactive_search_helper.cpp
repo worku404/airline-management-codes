@@ -17,26 +17,9 @@ ETS1292/17
 #include "flight_manager.h"
 
 namespace {
-constexpr const char* GREEN = "\033[32m";
-constexpr const char* BLUE = "\033[34m";
-constexpr const char* RED = "\033[31m";
-constexpr const char* RESET = "\033[0m";
 constexpr int kSecondsPerDay = 24 * 60 * 60;
 
-void print_divider() {
-    std::cout << "==========================================\n";
-}
-
-void print_title(const std::string& title) {
-    print_divider();
-    std::cout << title << "\n";
-    print_divider();
-}
-
-void prompt_display(const std::string& text) {
-    std::cout << BLUE << "? " << RESET << text << "\n";
-}
-
+// Helper: Prompts the user and reads a trimmed line of input.
 std::string get_user_input() {
     std::cout << "> ";
     std::string input;
@@ -50,6 +33,7 @@ std::string get_user_input() {
     return "";
 }
 
+// Helper: Parses a YYYY-MM-DD formatted date string into a std::time_t timestamp.
 std::time_t parse_date(const std::string& date_str) {
     std::istringstream stream(date_str);
     int year = 0;
@@ -80,6 +64,7 @@ std::time_t parse_date(const std::string& date_str) {
     return result == -1 ? -1 : result;
 }
 
+// Helper: Validates if a date string adheres strictly to the YYYY-MM-DD format.
 bool is_valid_date_format(const std::string& date_str) {
     if (date_str.length() != 10) {
         return false;
@@ -99,6 +84,7 @@ bool is_valid_date_format(const std::string& date_str) {
     return true;
 }
 
+// Helper: Determines if the specified timestamp represents today or a future date.
 bool is_date_future(std::time_t timestamp) {
     const std::time_t now = std::time(nullptr);
     std::tm* now_info = std::localtime(&now);
@@ -114,6 +100,7 @@ bool is_date_future(std::time_t timestamp) {
     return timestamp >= today_midnight;
 }
 
+// Helper: Formats a std::time_t timestamp into a YYYY-MM-DD string.
 std::string format_date(std::time_t timestamp) {
     const std::tm* time_info = std::localtime(&timestamp);
     char buffer[11] = {};
@@ -122,10 +109,33 @@ std::string format_date(std::time_t timestamp) {
     }
     return buffer;
 }
+
+// Helper: Parses a numeric string into an integer manually without exceptions.
+bool try_parse_int(const std::string& value, int& out) {
+    if (value.empty()) {
+        return false;
+    }
+    for (char ch : value) {
+        if (!std::isdigit(static_cast<unsigned char>(ch))) {
+            return false;
+        }
+    }
+    long long val = 0;
+    for (char ch : value) {
+        val = val * 10 + (ch - '0');
+        if (val > 1000000) {
+            return false;
+        }
+    }
+    out = static_cast<int>(val);
+    return true;
+}
 }
 
+// Function: get_airport_from_user
+// Purpose: Prompts the user to select an airport with a paginated airport directory list.
 std::string get_airport_from_user(const std::string& prompt_text) {
-    prompt_display(prompt_text);
+    std::cout  << "? "  << prompt_text << "\n";;
 
     const auto all_airports = list_all_airports();
     int page = 0;
@@ -153,7 +163,7 @@ std::string get_airport_from_user(const std::string& prompt_text) {
             }
         }
 
-        prompt_display("Select airport (enter number)");
+        std::cout  << "? "  << "Select airport (enter number)" << "\n";
         const std::string input = get_user_input();
 
         if ((input == "N" || input == "n") && end < static_cast<int>(all_airports.size())) {
@@ -165,81 +175,88 @@ std::string get_airport_from_user(const std::string& prompt_text) {
             continue;
         }
 
-        try {
-            const int selection = std::stoi(input);
+        int selection = 0;
+        if (try_parse_int(input, selection)) {
             const int actual_index = start + selection - 1;
 
             if (selection >= 1 && actual_index < static_cast<int>(all_airports.size())) {
                 const AirportInfo& chosen = all_airports[actual_index];
-                std::cout << GREEN << "OK: " << RESET
+                std::cout  << "OK: " 
                           << get_airport_display_string(chosen) << "\n\n";
                 return chosen.iata_code;
             }
-            std::cout << RED << "Invalid selection.\n" << RESET;
-        } catch (const std::exception&) {
-            std::cout << RED << "Invalid input.\n" << RESET;
+            std::cout << "Invalid selection.\n" ;
+        } else {
+            std::cout << "Invalid input.\n" ;
         }
     }
 }
 
+// Function: get_date_from_user
+// Purpose: Prompts the user to enter a valid future date in YYYY-MM-DD format.
 std::time_t get_date_from_user(const std::string& prompt_text) {
     while (true) {
-        prompt_display(prompt_text);
+        std::cout  << "? "  << prompt_text << "\n";;
         const std::string date_input = get_user_input();
 
         if (date_input.empty()) {
-            std::cout << RED << "Date cannot be empty.\n" << RESET;
+            std::cout  << "Date cannot be empty.\n";
             continue;
         }
 
         if (!is_valid_date_format(date_input)) {
-            std::cout << RED << "Invalid format. Use YYYY-MM-DD.\n" << RESET;
+            std::cout << "Invalid format. Use YYYY-MM-DD.\n" ;
             continue;
         }
 
         const std::time_t parsed_date = parse_date(date_input);
         if (parsed_date == -1) {
-            std::cout << RED << "Invalid date.\n" << RESET;
+            std::cout << "Invalid date.\n" ;
             continue;
         }
 
         if (!is_date_future(parsed_date)) {
-            std::cout << RED << "Date must be today or later.\n" << RESET;
+            std::cout << "Date must be today or later.\n" ;
             continue;
         }
 
-        std::cout << GREEN << "OK: " << RESET << date_input << "\n\n";
+        std::cout  << "OK: "  << date_input << "\n\n";
         return parsed_date;
     }
 }
 
+// Function: get_search_range_days
+// Purpose: Prompts the user for a search range (1 to 365 days).
 int get_search_range_days() {
     while (true) {
-        prompt_display("Search range in days? (1-365)");
+        std::cout  << "? "  << "Search range in days? (1-365): ";
         const std::string input = get_user_input();
 
         if (input.empty()) {
-            std::cout << RED << "Input cannot be empty.\n" << RESET;
+            std::cout << "Input cannot be empty.\n" ;
             continue;
         }
 
-        try {
-            const int days = std::stoi(input);
+        int days = 0;
+        if (try_parse_int(input, days)) {
             if (days >= 1 && days <= 365) {
-                std::cout << GREEN << "OK: " << RESET << days << " day"
+                std::cout  << "OK: "  << days << " day"
                           << (days == 1 ? "" : "s") << "\n\n";
                 return days;
             }
-            std::cout << RED << "Enter a value between 1 and 365.\n" << RESET;
-        } catch (const std::exception&) {
-            std::cout << RED << "Invalid input.\n" << RESET;
+            std::cout << "Enter a value between 1 and 365.\n" ;
+        } else {
+            std::cout << "Invalid input.\n" ;
         }
     }
 }
 
+// Function: get_interactive_search
+// Purpose: Assembles all search criteria interactively via user console prompts.
 SearchCriteria get_interactive_search() {
-    print_title("Flight Search Setup");
-    std::cout << "\n";
+    std::cout<<"==========================================\n";
+    std::cout << "Flight Search Setup \n";
+    std::cout<<"==========================================\n\n";
 
     const std::string origin = get_airport_from_user("Select departure airport:");
 
@@ -249,11 +266,10 @@ SearchCriteria get_interactive_search() {
         if (destination != origin) {
             break;
         }
-        std::cout << RED << "Arrival airport must be different from departure airport.\n"
-                  << RESET;
+        std::cout << "Arrival airport must be different from departure airport.\n";
     }
 
-    const std::time_t departure_date = get_date_from_user("Departure date (YYYY-MM-DD):");
+    const std::time_t departure_date = get_date_from_user("Departure date (YYYY-MM-DD): ");
     const int search_days = get_search_range_days();
 
     const std::time_t end_date =
@@ -261,13 +277,13 @@ SearchCriteria get_interactive_search() {
         static_cast<std::time_t>(search_days - 1) * kSecondsPerDay +
         (kSecondsPerDay - 1);
 
-    std::cout << GREEN << "Searching: " << RESET << origin << " -> "
+    std::cout  << "Searching: "  << origin << " -> "
               << destination << "\n";
-    std::cout << GREEN << "Dates: " << RESET
+    std::cout  << "Dates: " 
               << format_date(departure_date) << " to "
               << format_date(end_date) << "\n\n";
 
-    print_divider();
+    std::cout<<"==========================================\n";
     std::cout << "\n";
 
     return SearchCriteria{origin, destination, departure_date, end_date};

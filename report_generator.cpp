@@ -6,6 +6,7 @@ ETS1292/17
 #include "report_generator.h"
 #include <sstream>
 
+// Generates an operational report summary showing reservations, check-ins, boardings, and delays.
 OperationalReport generate_operational_report(int total_reservations,
                                               int total_checked_in,
                                               int total_boarded,
