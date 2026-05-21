@@ -26,7 +26,7 @@ ETS1609/17
 namespace {
     // Static array of all airports
     // Using a namespace-scoped array ensures it's only initialized once
-    const AirportInfo AIRPORTS[] = {
+    const std::vector<AirportInfo> AIRPORTS = {
         // ====================================================================
         // AFRICA
         // ====================================================================
@@ -102,33 +102,23 @@ namespace {
         {"GIG", "Rio de Janeiro", "Rio de Janeiro International Airport"},
         {"GRU", "São Paulo", "São Paulo International Airport"},
     };
-    
-    // Calculate the number of airports in the array
-    // sizeof(AIRPORTS) = total size of array
-    // sizeof(AIRPORTS[0]) = size of one element
-    // Division gives us the count
-    constexpr size_t AIRPORT_COUNT = sizeof(AIRPORTS) / sizeof(AIRPORTS[0]);
+    // No longer using fixed AIRPORT_COUNT since AIRPORTS is a vector.
 }
 
 
 
+// Function: list_all_airports
+// Purpose: Returns a list of all registered airports in the system.
 std::vector<AirportInfo> list_all_airports() {
-    // Convert the static array to a vector for easier handling
-    // This creates a copy of all airports
-    std::vector<AirportInfo> result;
     
-    // Loop through all airports and add them to the vector
-    for (size_t i = 0; i < AIRPORT_COUNT; ++i) {
-        result.push_back(AIRPORTS[i]);
-    }
-    
-    return result;
+    return AIRPORTS;
 }
 
-
+// Function: find_airport_by_iata
+// Purpose: Finds a registered airport using its 3-letter IATA code.
 const AirportInfo* find_airport_by_iata(const std::string& iata_code) {
     to_upper(iata_code);
-    for (size_t i = 0; i < AIRPORT_COUNT; ++i) {
+    for (size_t i = 0; i < AIRPORTS.size(); ++i) {
         
         if (AIRPORTS[i].iata_code == iata_code) {
             return &AIRPORTS[i];
@@ -139,14 +129,15 @@ const AirportInfo* find_airport_by_iata(const std::string& iata_code) {
     return nullptr;
 }
 
-
+// Function: find_airports_by_city_name
+// Purpose: Finds all registered airports located in a specific city.
 std::vector<AirportInfo> find_airports_by_city_name(
     const std::string& city_name) {
     to_upper(city_name);
 
     std::vector<AirportInfo> results;
     
-    for (size_t i = 0; i < AIRPORT_COUNT; ++i) {
+    for (size_t i = 0; i < AIRPORTS.size(); ++i) {
         
         if (AIRPORTS[i].city_name == city_name) {
             results.push_back(AIRPORTS[i]);
@@ -156,16 +147,8 @@ std::vector<AirportInfo> find_airports_by_city_name(
     return results;
 }
 
-
+// Function: get_airport_display_string
+// Purpose: Simplifies airport details into a single readable string format.
 std::string get_airport_display_string(const AirportInfo& airport) {
-    
-    std::string result;
-    
-    result += airport.city_name;           // "New York"
-    result += " (";                        // " ("
-    result += airport.iata_code;           // "JFK"
-    result += ") - ";                      // ") - "
-    result += airport.airport_name;        // "John F. Kennedy International..."
-    
-    return result;
+    return airport.city_name + " (" + airport.iata_code + ") - " + airport.airport_name;
 }
