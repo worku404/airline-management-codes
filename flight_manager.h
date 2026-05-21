@@ -20,7 +20,7 @@ struct Flight {
     Money base_price;
     std::string status;
 };
-
+//origin_iata, destination_iata
 struct SearchCriteria {
     std::string origin;
     std::string destination;

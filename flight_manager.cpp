@@ -16,6 +16,7 @@ namespace {
     // Global storage for all flights in the system
     std::vector<Flight> g_flights;
 
+// Normalizes status string to match canonical status forms (e.g. "On Time", "Delayed", "Boarding", "Cancelled").
 std::string canonicalize_status(std::string status) {
     std::string normalized;
     normalized.reserve(status.size());
@@ -53,6 +54,7 @@ std::string canonicalize_status(std::string status) {
     return "";
 }
 
+// Checks whether the provided flight status string is valid.
 bool is_valid_status(const std::string& status) {
     return !canonicalize_status(status).empty();
 }
@@ -220,6 +222,7 @@ const Flight* find_flight(const std::string& flight_id) {
 
 // VERSION 2: Writable (for modifications like status updates)
 // ============================================================================
+// Finds a mutable pointer to a flight by its ID.
 Flight* find_flight_mutable(const std::string& flight_id) {
     
     for (auto& flight : g_flights) {  // NOT const
