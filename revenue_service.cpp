@@ -15,6 +15,7 @@ namespace {
 constexpr double kHighDemandAvailabilityThreshold = 0.10;
 constexpr double kModerateAvailabilityThreshold = 0.25;
 
+// Checks if multiplying a long long value by a multiplier will result in integer overflow or underflow.
 bool will_mul_overflow(long long value, long long multiplier) {
     if (multiplier == 0) {
         return false;
@@ -35,6 +36,7 @@ bool will_mul_overflow(long long value, long long multiplier) {
 }
 }
 
+// Calculates dynamic ticket pricing based on remaining flight seat availability ratios.
 Money calculate_dynamic_price(const Money& base_price,
                               int remaining_seats,
                               int total_capacity,
@@ -70,6 +72,7 @@ Money calculate_dynamic_price(const Money& base_price,
     return priced;
 }
 
+// Audits the in-memory recorded revenue against the sum of individual booking totals.
 RevenueAuditResult audit_revenue(const std::vector<Money>& booking_totals, long long recorded_total) {
     long long computed = 0;
     for (const auto& amount : booking_totals) {

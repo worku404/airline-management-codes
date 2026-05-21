@@ -8,10 +8,12 @@ ETS1488/17
 #include <cctype>
 #include <limits>
 
+// Creates a success Status object.
 Status make_success() {
     return {true, "", ""};
 }
 
+// Creates a failure Status object with a code and error message.
 Status make_failure(const std::string& code, const std::string& message) {
     Status status{false, code, message};
     if (status.error_code.empty()) {
@@ -24,6 +26,7 @@ Status make_failure(const std::string& code, const std::string& message) {
 }
 
 namespace {
+// Checks if adding two long long integers would result in integer overflow or underflow.
 bool will_add_overflow(long long lhs, long long rhs) {
     if (rhs > 0 && lhs > std::numeric_limits<long long>::max() - rhs) {
         return true;
@@ -35,6 +38,7 @@ bool will_add_overflow(long long lhs, long long rhs) {
 }
 }
 
+// Adds two Money values together, checking for currency mismatch and overflow.
 Status add_money(const Money& lhs, const Money& rhs, Money& out) {
     if (lhs.currency != rhs.currency) {
         return make_failure("MONEY_CURRENCY_MISMATCH", "Currency mismatch in Money addition");
@@ -47,6 +51,7 @@ Status add_money(const Money& lhs, const Money& rhs, Money& out) {
     return make_success();
 }
 
+// Subtracts one Money value from another, checking for currency mismatch and overflow.
 Status subtract_money(const Money& lhs, const Money& rhs, Money& out) {
     if (lhs.currency != rhs.currency) {
         return make_failure("MONEY_CURRENCY_MISMATCH", "Currency mismatch in Money subtraction");
@@ -59,6 +64,7 @@ Status subtract_money(const Money& lhs, const Money& rhs, Money& out) {
     return make_success();
 }
 
+// Parses a string into a SeatClass enum value.
 Status parse_seat_class(const std::string& input, SeatClass& out) {
     const std::string value = to_upper(input);
     if (value == "ECONOMY") {
@@ -76,6 +82,7 @@ Status parse_seat_class(const std::string& input, SeatClass& out) {
     return make_failure("SEAT_CLASS_INVALID", "Unknown seat class");
 }
 
+// Converts a SeatClass enum value to its string representation.
 std::string seat_class_to_string(SeatClass seat_class) {
     switch (seat_class) {
         case SeatClass::Economy:

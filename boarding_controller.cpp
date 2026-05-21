@@ -16,6 +16,7 @@ ETS1488/17
 namespace {
 int g_total_checkins = 0;
 
+// Normalizes PNR identifier string by upper-casing it and stripping the prefix.
 std::string normalize_pnr_input(std::string pnr_id) {
     pnr_id = to_upper(pnr_id);
     const std::string prefix = "PNR-";
@@ -25,6 +26,7 @@ std::string normalize_pnr_input(std::string pnr_id) {
     return pnr_id;
 }
 
+// Determines the boarding group based on the seat class.
 int boarding_group_for(SeatClass seat_class) {
     switch (seat_class) {
         case SeatClass::First:
@@ -37,6 +39,7 @@ int boarding_group_for(SeatClass seat_class) {
     }
 }
 
+// Generates a boarding gate identifier from a flight ID.
 std::string gate_for(const std::string& flight_id) {
     if (flight_id.empty()) {
         return "G0";
@@ -49,6 +52,7 @@ std::string gate_for(const std::string& flight_id) {
 }
 }
 
+// Processes check-in for a passenger by validating PNR, baggage count, and updating reservation status.
 CheckInResult process_check_in(const std::string& pnr_id, int baggage_count) {
     const std::string normalized_pnr = normalize_pnr_input(pnr_id);
     if (!is_valid_pnr(normalized_pnr)) {
@@ -76,14 +80,17 @@ CheckInResult process_check_in(const std::string& pnr_id, int baggage_count) {
     return {pass, make_success(), baggage_count};
 }
 
+// Updates the status of a flight.
 Status update_flight_status(const std::string& flight_id, const std::string& new_status) {
     return set_flight_status(flight_id, new_status);
 }
 
+// Retrieves the total number of processed check-ins.
 int get_total_checkins() {
     return g_total_checkins;
 }
 
+// Retrieves the total number of boarded passengers.
 int get_total_boarded() {
     return g_total_checkins;
 }
