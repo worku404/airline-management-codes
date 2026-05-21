@@ -7,6 +7,7 @@ ETS 1459/17
 
 #include <iostream>
 
+// Masks an identifier (like a passport number) leaving only a suffix visible.
 std::string mask_identifier(const std::string& value, std::size_t visible_suffix) {
     if (value.size() <= visible_suffix) {
         return value;
@@ -14,6 +15,7 @@ std::string mask_identifier(const std::string& value, std::size_t visible_suffix
     return std::string(value.size() - visible_suffix, '*') + value.substr(value.size() - visible_suffix);
 }
 
+// Logs status errors to std::cerr.
 void log_status(const Status& status, const std::string& context) {
     if (status.success) {
         return;

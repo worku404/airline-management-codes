@@ -26,10 +26,6 @@ controller.h
 #include "report_generator.h"
 
 namespace {
-constexpr const char* GREEN = "\033[32m";
-constexpr const char* BLUE = "\033[34m";
-constexpr const char* RED = "\033[31m";
-constexpr const char* RESET = "\033[0m";
 constexpr int kSecondsPerHour = 3600;
 constexpr int kSecondsPerDay = 24 * kSecondsPerHour;
 constexpr int kRecentPnrLimit = 8;
@@ -39,10 +35,12 @@ const char* kFlightStatuses[] = {"On Time", "Delayed", "Boarding", "Cancelled"};
 std::vector<Flight> g_last_search_results;
 std::vector<std::string> g_recent_pnrs;
 
+// Helper: Prints a horizontal divider line of custom characters.
 void print_divider(char fill = '=') {
     std::cout << std::string(78, fill) << "\n";
 }
 
+// Helper: Prints a section title wrapped in divider lines.
 void print_section_title(const std::string& title) {
     std::cout << "\n";
     print_divider();
@@ -50,33 +48,26 @@ void print_section_title(const std::string& title) {
     print_divider();
 }
 
+// Helper: Prints an interactive user hint message.
 void print_hint(const std::string& text) {
     std::cout << "Hint: " << text << "\n";
 }
 
+// Helper: Prints the help menu for the Airline Management CLI.
 void print_help() {
-    print_section_title("Airline Management CLI");
-    std::cout <<GREEN<< "Type a command name to open guided mode, or enter the full command directly.\n\n"<<RESET
+    print_section_title("Airline Management CLI Help");
+    std::cout << "Select an action by entering the corresponding menu number.\n"
               << "Guided actions:\n"
-              <<BLUE<< "  search                         Search flights interactively\n"
-              << "  book                           Create a booking with prompts\n"
-              << "  checkin                        Check in a passenger with prompts\n"
-              << "  status                         Update a flight status with prompts\n"
-              << "  report                         Show revenue and operations summary\n\n"<<RESET
-              << "Direct commands:\n"
-              << "  book <flight_id> <class> <first> <last> <passport> [seat]\n"
-              << "  checkin <pnr> [baggage_count]\n"
-              << "  status <flight_id> <status>\n\n"
-              << "System commands:\n"
-              << "  :help, help                    Show this help\n"
-              << "  :quit, quit, exit              Exit the system\n\n"
-              << "Examples:\n"
-              << "  search\n"
-              << "  book FL-101 Economy John Smith AB123456\n"
-              << "  checkin PNR-ABC123 2\n"
-              << "  status FL-101 On Time\n";
+              << "  1. Search flights interactively\n"
+              << "  2. Create a booking with prompts\n"
+              << "  3. Check in a passenger with prompts\n"
+              << "  4. Update a flight status with prompts\n"
+              << "  5. Show revenue and operations summary\n"
+              << "  6. Print the main menu / help options\n"
+              << "  7. Exit the system\n";
 }
 
+// Helper: Prints the status message of an operation.
 void print_status(const Status& status, const std::string& context) {
     if (status.success) {
         std::cout << "Success: " << context << "\n";
@@ -89,27 +80,7 @@ void print_status(const Status& status, const std::string& context) {
     std::cout << "\n";
 }
 
-std::vector<std::string> split_tokens(const std::string& line) {
-    std::istringstream stream(line);
-    std::vector<std::string> tokens;
-    std::string token;
-    while (stream >> token) {
-        tokens.push_back(token);
-    }
-    return tokens;
-}
-
-std::string join_tokens(const std::vector<std::string>& tokens, size_t start_index) {
-    std::ostringstream stream;
-    for (size_t i = start_index; i < tokens.size(); ++i) {
-        if (i > start_index) {
-            stream << ' ';
-        }
-        stream << tokens[i];
-    }
-    return stream.str();
-}
-
+// Helper: Trims leading and trailing whitespace characters from a string.
 std::string trim_copy(const std::string& value) {
     const size_t start = value.find_first_not_of(" \t\r\n");
     if (start == std::string::npos) {
@@ -119,6 +90,7 @@ std::string trim_copy(const std::string& value) {
     return value.substr(start, end - start + 1);
 }
 
+// Helper: Normalizes a command string for case-insensitive uniform comparison.
 std::string normalize_command(const std::string& command) {
     if (!command.empty() && command[0] == ':') {
         return ":" + normalize_command(command.substr(1));
@@ -135,6 +107,7 @@ std::string normalize_command(const std::string& command) {
     return normalized;
 }
 
+// Helper: Standardizes and normalizes PNR alphanumeric codes.
 std::string normalize_pnr_input(std::string pnr) {
     pnr = to_upper(trim_copy(pnr));
     const std::string prefix = "PNR-";
@@ -144,6 +117,7 @@ std::string normalize_pnr_input(std::string pnr) {
     return pnr;
 }
 
+// Helper: Canonicalizes user inputs into recognized flight status strings.
 std::string canonicalize_status_input(std::string value) {
     value = trim_copy(value);
     std::string normalized;
@@ -181,28 +155,38 @@ std::string canonicalize_status_input(std::string value) {
     return "";
 }
 
+// Helper: Computes a future timestamp offset by a number of days.
 std::time_t now_plus_days(int days) {
     return std::time(nullptr) + static_cast<std::time_t>(days) * kSecondsPerDay;
 }
 
+// Helper: Safely parses integers from input strings manually without using exceptions.
 bool try_parse_int(const std::string& value, int& out) {
-    try {
-        size_t index = 0;
-        const int parsed = std::stoi(value, &index);
-        if (index != value.size()) {
-            return false;
-        }
-        out = parsed;
-        return true;
-    } catch (const std::exception&) {
+    if (value.empty()) {
         return false;
     }
+    for (char ch : value) {
+        if (!std::isdigit(static_cast<unsigned char>(ch))) {
+            return false;
+        }
+    }
+    long long val = 0;
+    for (char ch : value) {
+        val = val * 10 + (ch - '0');
+        if (val > 1000000) {
+            return false;
+        }
+    }
+    out = static_cast<int>(val);
+    return true;
 }
 
+// Helper: Parses checked baggage quantities from input.
 bool parse_baggage_count(const std::string& value, int& out) {
     return try_parse_int(value, out);
 }
 
+// Helper: Formats money structures to clean printable currency strings.
 std::string format_money(const Money& amount) {
     std::ostringstream stream;
     stream << std::fixed << std::setprecision(2)
@@ -211,6 +195,7 @@ std::string format_money(const Money& amount) {
     return stream.str();
 }
 
+// Helper: Converts timet timestamps into readable date-time strings.
 std::string format_date_time(std::time_t timestamp) {
     const std::tm* time_info = std::localtime(&timestamp);
     char buffer[17] = {};
@@ -220,6 +205,7 @@ std::string format_date_time(std::time_t timestamp) {
     return buffer;
 }
 
+// Helper: Converts reservation status enums into printable strings.
 std::string reservation_status_to_string(ReservationStatus status) {
     switch (status) {
         case ReservationStatus::Reserved:
@@ -233,6 +219,7 @@ std::string reservation_status_to_string(ReservationStatus status) {
     }
 }
 
+// Helper: Tracks recently created booking PNRs for selection.
 void remember_pnr(const std::string& pnr) {
     const auto existing = std::find(g_recent_pnrs.begin(), g_recent_pnrs.end(), pnr);
     if (existing != g_recent_pnrs.end()) {
@@ -244,6 +231,7 @@ void remember_pnr(const std::string& pnr) {
     }
 }
 
+// Helper: Prompts the user with a string message and receives their line input.
 std::string prompt_line(const std::string& label) {
     std::cout << label << "\n> ";
     std::string input;
@@ -251,6 +239,7 @@ std::string prompt_line(const std::string& label) {
     return trim_copy(input);
 }
 
+// Helper: Enforces non-empty user text input during guided prompts.
 std::string prompt_non_empty_text(const std::string& label) {
     while (true) {
         const std::string input = prompt_line(label);
@@ -261,6 +250,7 @@ std::string prompt_non_empty_text(const std::string& label) {
     }
 }
 
+// Helper: Displays flight choices and seat capacities to the console.
 void print_flight_option(int index, const Flight& flight) {
     const InventorySnapshot snapshot = get_inventory_snapshot(flight.flight_id);
     std::cout << "  " << index << ". " << flight.flight_id
@@ -273,6 +263,8 @@ void print_flight_option(int index, const Flight& flight) {
               << ", First " << snapshot.first_available << "\n";
 }
 
+// Function: prompt_flight_id
+// Purpose: Prompts the user to select a flight from a list by its index number.
 std::string prompt_flight_id(const std::string& initial_value,
                              bool prefer_last_search_results,
                              bool allow_prompt) {
@@ -306,19 +298,14 @@ std::string prompt_flight_id(const std::string& initial_value,
     }
 
     while (true) {
-        const std::string input = prompt_line("Choose a flight by number or enter a flight ID:");
+        const std::string input = prompt_line("Choose a flight by number:");
         int selection = 0;
         if (try_parse_int(input, selection)) {
             if (selection >= 1 && selection <= static_cast<int>(flights.size())) {
                 return flights[selection - 1].flight_id;
             }
-        } else {
-            const std::string flight_id = to_upper(input);
-            if (!flight_id.empty() && find_flight(flight_id) != nullptr) {
-                return flight_id;
-            }
         }
-        std::cout << "Please choose a valid flight number or flight ID.\n";
+        std::cout << "Please choose a valid flight number.\n";
     }
 }
 
@@ -411,6 +398,8 @@ std::string resolve_passport(const std::string& initial_value, bool allow_prompt
     }
 }
 
+// Function: resolve_seat_number
+// Purpose: Validates and prompts the user for their preferred seat, showing format clues.
 std::string resolve_seat_number(const std::string& initial_value, bool allow_prompt) {
     const std::string normalized_value = to_upper(trim_copy(initial_value));
     if (normalized_value.empty()) {
@@ -427,14 +416,14 @@ std::string resolve_seat_number(const std::string& initial_value, bool allow_pro
 
     while (true) {
         const std::string seat =
-            to_upper(prompt_line("Preferred seat (optional, press Enter to auto-assign):"));
+            to_upper(prompt_line("Preferred seat (optional, e.g. 1A, A1, 12E, E12, press Enter to auto-assign):"));
         if (seat.empty()) {
             return "";
         }
         if (is_valid_seat_number(seat)) {
             return seat;
         }
-        std::cout << "Seat format is invalid.\n";
+        std::cout << "Seat format is invalid. Must be a letter followed by digits (e.g., A1) or digits followed by a letter (e.g., 12A).\n";
     }
 }
 
@@ -449,6 +438,8 @@ std::vector<std::string> recent_reserved_pnrs() {
     return available;
 }
 
+// Function: prompt_pnr
+// Purpose: Prompts the user for a booking PNR. If a list of recent bookings is available, enforces a simple numeric choice.
 std::string prompt_pnr(const std::string& initial_value, bool allow_prompt) {
     const std::string normalized_value = normalize_pnr_input(initial_value);
     if (!normalized_value.empty() && is_valid_pnr(normalized_value)) {
@@ -481,22 +472,23 @@ std::string prompt_pnr(const std::string& initial_value, bool allow_prompt) {
     }
 
     while (true) {
-        const std::string input = prompt_line(
-            available.empty()
-                ? "Enter the booking PNR (example: ABC123 or PNR-ABC123):"
-                : "Choose a booking by number or enter a PNR:");
-        int selection = 0;
-        if (!available.empty() && try_parse_int(input, selection)) {
-            if (selection >= 1 && selection <= static_cast<int>(available.size())) {
-                return available[selection - 1];
-            }
-        } else {
+        if (available.empty()) {
+            const std::string input = prompt_line("Enter the booking PNR (example: ABC123 or PNR-ABC123):");
             const std::string pnr = normalize_pnr_input(input);
             if (is_valid_pnr(pnr)) {
                 return pnr;
             }
+            std::cout << "Please enter a valid PNR.\n";
+        } else {
+            const std::string input = prompt_line("Choose a booking by number:");
+            int selection = 0;
+            if (try_parse_int(input, selection)) {
+                if (selection >= 1 && selection <= static_cast<int>(available.size())) {
+                    return available[selection - 1];
+                }
+            }
+            std::cout << "Please choose a valid booking number.\n";
         }
-        std::cout << "Please enter a valid PNR.\n";
     }
 }
 
@@ -565,15 +557,17 @@ std::string prompt_flight_status(const std::string& initial_value, bool allow_pr
     }
 }
 
+// Helper: Prints the list of flights matching the search criteria.
 void print_search_results(const std::vector<Flight>& flights) {
     print_section_title("Search Results");
     std::cout << flights.size() << (flights.size() == 1 ? " flight found.\n" : " flights found.\n");
     for (size_t i = 0; i < flights.size(); ++i) {
         print_flight_option(static_cast<int>(i + 1), flights[i]);
     }
-    print_hint("Type 'book' to open guided booking for one of these flights.");
+    print_hint("Select option 2 from the main menu to book one of these flights.");
 }
 
+// Helper: Displays confirmation details for a successfully created booking.
 void print_booking_confirmation(const BookingResult& result) {
     print_section_title("Booking Confirmed");
     const ReservationRecord* record = find_reservation(result.pnr_id);
@@ -588,9 +582,10 @@ void print_booking_confirmation(const BookingResult& result) {
         std::cout << "PNR:       PNR-" << result.pnr_id << "\n";
     }
     std::cout << "Total:     " << format_money(result.total_cost) << "\n";
-    print_hint("Type 'checkin' to start guided check-in for this booking.");
+    print_hint("Select option 3 from the main menu to start guided check-in for this booking.");
 }
 
+// Helper: Displays confirmation details for a successfully completed passenger check-in.
 void print_checkin_confirmation(const CheckInResult& result) {
     print_section_title("Check-in Complete");
     const ReservationRecord* record = find_reservation(result.pass.pnr_id);
@@ -604,9 +599,10 @@ void print_checkin_confirmation(const CheckInResult& result) {
     std::cout << "Gate:           " << result.pass.gate << "\n"
               << "Boarding group: " << result.pass.boarding_group << "\n"
               << "Checked bags:   " << result.baggage_count << "\n";
-    print_hint("Type 'report' to review the updated operations summary.");
+    print_hint("Select option 5 from the main menu to review the updated operations summary.");
 }
 
+// Helper: Displays confirmation details for a flight status change.
 void print_status_confirmation(const Flight& flight) {
     print_section_title("Flight Status Updated");
     std::cout << "Flight:     " << flight.flight_id << "\n"
@@ -659,48 +655,30 @@ void handle_search_command() {
     print_search_results(result.available_flights);
 }
 
-void handle_book_command(const std::vector<std::string>& tokens) {
-    const bool allow_prompt = tokens.size() < 6;
-
-    const std::string flight_id = prompt_flight_id(
-        tokens.size() >= 2 ? tokens[1] : "",
-        true,
-        true);
+// Action: Books a flight interactively with prompt inputs.
+void handle_book_command() {
+    const std::string flight_id = prompt_flight_id("", true, true);
     if (flight_id.empty()) {
         print_status(make_failure("BOOKING_FLIGHT_UNKNOWN", "Flight not found"), "Booking");
         return;
     }
 
     SeatClass seat_class = SeatClass::Economy;
-    if (!resolve_seat_class(tokens.size() >= 3 ? tokens[2] : "", allow_prompt || tokens.size() < 3, seat_class)) {
+    if (!resolve_seat_class("", true, seat_class)) {
         print_status(make_failure("SEAT_CLASS_INVALID", "Unknown seat class"), "Booking");
         return;
     }
 
-    const std::string first_name = resolve_name_field(tokens.size() >= 4 ? tokens[3] : "",
-                                                      "Passenger first name:",
-                                                      allow_prompt || tokens.size() < 4);
-    const std::string last_name = resolve_name_field(tokens.size() >= 5 ? tokens[4] : "",
-                                                     "Passenger last name:",
-                                                     allow_prompt || tokens.size() < 5);
-    const std::string passport = resolve_passport(tokens.size() >= 6 ? tokens[5] : "",
-                                                  allow_prompt || tokens.size() < 6);
+    const std::string first_name = resolve_name_field("", "Passenger first name:", true);
+    const std::string last_name = resolve_name_field("", "Passenger last name:", true);
+    const std::string passport = resolve_passport("", true);
 
     if (first_name.empty() || last_name.empty() || passport.empty()) {
         print_status(make_failure("BOOKING_PASSENGER_MISSING", "Passenger details are required"), "Booking");
         return;
     }
 
-    std::string seat_number;
-    if (tokens.size() >= 7) {
-        seat_number = resolve_seat_number(tokens[6], false);
-        if (seat_number.empty()) {
-            print_status(make_failure("BOOKING_SEAT_INVALID", "Invalid seat number format"), "Booking");
-            return;
-        }
-    } else if (allow_prompt) {
-        seat_number = resolve_seat_number("", true);
-    }
+    const std::string seat_number = resolve_seat_number("", true);
 
     const BookingRequest request{
         flight_id,
@@ -719,30 +697,18 @@ void handle_book_command(const std::vector<std::string>& tokens) {
     print_booking_confirmation(result);
 }
 
-void handle_checkin_command(const std::vector<std::string>& tokens) {
-    const bool guided_mode = tokens.size() < 2;
-
-    const std::string pnr = prompt_pnr(tokens.size() >= 2 ? tokens[1] : "", guided_mode);
+// Action: Checks in a passenger interactively.
+void handle_checkin_command() {
+    const std::string pnr = prompt_pnr("", true);
     if (pnr.empty()) {
         print_status(make_failure("CHECKIN_PNR_INVALID", "Invalid PNR format"), "Check-in");
         return;
     }
 
     int baggage_count = 0;
-    if (tokens.size() >= 3) {
-        if (!resolve_baggage_count(tokens[2], false, baggage_count)) {
-            print_status(make_failure("CHECKIN_BAGGAGE_INVALID", "Invalid baggage count"), "Check-in");
-            return;
-        }
-    } else if (guided_mode) {
-        if (!resolve_baggage_count("", true, baggage_count)) {
-            print_status(make_failure("CHECKIN_BAGGAGE_INVALID", "Invalid baggage count"), "Check-in");
-            return;
-        }
-    }
-
-    if (tokens.size() < 3 && !guided_mode) {
-        baggage_count = 0;
+    if (!resolve_baggage_count("", true, baggage_count)) {
+        print_status(make_failure("CHECKIN_BAGGAGE_INVALID", "Invalid baggage count"), "Check-in");
+        return;
     }
 
     const CheckInResult result = process_check_in(pnr, baggage_count);
@@ -754,21 +720,15 @@ void handle_checkin_command(const std::vector<std::string>& tokens) {
     print_checkin_confirmation(result);
 }
 
-void handle_status_command(const std::vector<std::string>& tokens) {
-    const bool allow_prompt = tokens.size() < 3;
-
-    const std::string flight_id = prompt_flight_id(
-        tokens.size() >= 2 ? tokens[1] : "",
-        false,
-        true);
+// Action: Updates a flight's status interactively.
+void handle_status_command() {
+    const std::string flight_id = prompt_flight_id("", false, true);
     if (flight_id.empty()) {
         print_status(make_failure("FLIGHT_NOT_FOUND", "Flight not found"), "Status");
         return;
     }
 
-    const std::string new_status = prompt_flight_status(
-        tokens.size() >= 3 ? join_tokens(tokens, 2) : "",
-        allow_prompt || tokens.size() < 3);
+    const std::string new_status = prompt_flight_status("", true);
     if (new_status.empty()) {
         print_status(make_failure("STATUS_INVALID", "Invalid flight status transition"), "Status");
         return;
@@ -789,6 +749,7 @@ void handle_status_command(const std::vector<std::string>& tokens) {
 }
 }
 
+// Setup: Initializes flights and starting inventory in memory.
 void initialize_system() {
     add_flight({"FL-101", "ADD", "DXB", now_plus_days(1), now_plus_days(1) + 3 * kSecondsPerHour, {45000, "USD"}, "On Time"});
     add_flight({"FL-102", "ADD", "LHR", now_plus_days(2), now_plus_days(2) + 8 * kSecondsPerHour, {75000, "USD"}, "On Time"});
@@ -797,56 +758,44 @@ void initialize_system() {
     initialize_inventory(get_flight_registry(), 120, 24, 12);
 }
 
+// Execution: Runs the main interactive menu-driven console loop.
+// Function: run_repl
+// Purpose: Main loop that prints the help menu and processes numeric menu choices on each iteration.
 void run_repl() {
-    print_help();
     std::string line;
-    while (std::cout << "\nairline> " && std::getline(std::cin, line)) {
+    while (true) {
+        print_help();
+        std::cout << "\nairline> ";
+        if (!std::getline(std::cin, line)) {
+            break;
+        }
         line = trim_copy(line);
         if (line.empty()) {
             continue;
         }
 
-        const std::vector<std::string> tokens = split_tokens(line);
-        if (tokens.empty()) {
+        int choice = 0;
+        if (!try_parse_int(line, choice)) {
+            std::cout << "Invalid selection. Please enter a number between 1 and 7.\n";
             continue;
         }
 
-        const std::string command = normalize_command(tokens[0]);
-
-        if (command == ":QUIT" || command == "QUIT" || command == "EXIT") {
-            break;
-        }
-        if (command == ":HELP" || command == "HELP") {
-            print_help();
-            continue;
-        }
-
-        if (command == "SEARCH") {
+        if (choice == 1) {
             handle_search_command();
-            continue;
-        }
-
-        if (command == "BOOK") {
-            handle_book_command(tokens);
-            continue;
-        }
-
-        if (command == "CHECKIN") {
-            handle_checkin_command(tokens);
-            continue;
-        }
-
-        if (command == "STATUS") {
-            handle_status_command(tokens);
-            continue;
-        }
-
-        if (command == "REPORT") {
+        } else if (choice == 2) {
+            handle_book_command();
+        } else if (choice == 3) {
+            handle_checkin_command();
+        } else if (choice == 4) {
+            handle_status_command();
+        } else if (choice == 5) {
             print_report_summary();
+        } else if (choice == 6) {
             continue;
+        } else if (choice == 7) {
+            break;
+        } else {
+            std::cout << "Invalid selection. Please enter a number between 1 and 7.\n";
         }
-
-        std::cout << "Unknown command: " << tokens[0] << "\n";
-        print_hint("Try search, book, checkin, status, report, :help, or :quit.");
     }
 }
