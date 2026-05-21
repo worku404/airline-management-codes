@@ -19,6 +19,7 @@ std::map<std::string, ReservationRecord> g_reservations;
 long long g_recorded_revenue = 0;
 constexpr int kMaxPnrGenerationAttempts = 10;
 
+// Generates a random 6-character alphanumeric PNR.
 std::string generate_pnr() {
     static const char kAlphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     static std::mt19937 rng(std::random_device{}());
@@ -31,6 +32,7 @@ std::string generate_pnr() {
     return pnr;
 }
 
+// Automatically assigns sequential seat numbers based on the flight and class.
 std::string generate_seat_number(const std::string& flight_id, SeatClass seat_class) {
     static std::map<std::string, int> counters;
     std::string prefix = "E";
@@ -44,6 +46,7 @@ std::string generate_seat_number(const std::string& flight_id, SeatClass seat_cl
     return prefix + std::to_string(counter);
 }
 
+// Records booking revenue in-memory with overflow protection.
 Status record_revenue(const Money& amount) {
     if (amount.amount_cents > 0 && g_recorded_revenue > std::numeric_limits<long long>::max() - amount.amount_cents) {
         return make_failure("REVENUE_OVERFLOW", "Revenue total overflow");
@@ -53,6 +56,7 @@ Status record_revenue(const Money& amount) {
 }
 }
 
+// Creates a new flight booking reservation in the system.
 BookingResult create_booking(const BookingRequest& request) {
     if (request.flight_id.empty()) {
         return {"", {0, "USD"}, make_failure("BOOKING_FLIGHT_MISSING", "Flight ID is required")};
@@ -160,6 +164,7 @@ BookingResult create_booking(const BookingRequest& request) {
     return {pnr, total_cost, make_success()};
 }
 
+// Finds a reservation record using its PNR.
 const ReservationRecord* find_reservation(const std::string& pnr_id) {
     auto it = g_reservations.find(pnr_id);
     if (it == g_reservations.end()) {
@@ -168,6 +173,7 @@ const ReservationRecord* find_reservation(const std::string& pnr_id) {
     return &it->second;
 }
 
+// Updates the reservation status (e.g. Reserved, CheckedIn).
 Status update_reservation_status(const std::string& pnr_id, ReservationStatus new_status) {
     auto it = g_reservations.find(pnr_id);
     if (it == g_reservations.end()) {
@@ -177,6 +183,7 @@ Status update_reservation_status(const std::string& pnr_id, ReservationStatus ne
     return make_success();
 }
 
+// Retrieves a list of all active reservation records.
 std::vector<ReservationRecord> get_all_reservations() {
     std::vector<ReservationRecord> records;
     records.reserve(g_reservations.size());
@@ -186,6 +193,7 @@ std::vector<ReservationRecord> get_all_reservations() {
     return records;
 }
 
+// Retrieves the money total for every active booking.
 std::vector<Money> get_booking_totals() {
     std::vector<Money> totals;
     totals.reserve(g_reservations.size());
@@ -195,10 +203,12 @@ std::vector<Money> get_booking_totals() {
     return totals;
 }
 
+// Returns the total count of reservation records.
 int get_total_reservations() {
     return static_cast<int>(g_reservations.size());
 }
 
+// Retrieves the total recorded system revenue.
 long long get_recorded_revenue() {
     return g_recorded_revenue;
 }

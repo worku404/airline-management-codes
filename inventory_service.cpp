@@ -3,7 +3,6 @@ Yonas Dereje
 ETS1558/17
 */
 
-
 #include "inventory_service.h"
 
 #include <unordered_map>
@@ -23,6 +22,7 @@ namespace {
 
     std::unordered_map<std::string, InventoryState> g_inventory;
 
+    // Helper: Selects the pointer to the available seats for a given SeatClass.
     int* select_available(InventoryState& state, SeatClass seat_class) {
         switch (seat_class) {
             case SeatClass::Economy:
@@ -33,11 +33,29 @@ namespace {
                 return &state.first_available;
             default:
                 return nullptr;  // Invalid class
+        }
+    }
+
+    // Helper: Checks if a proposed inventory change is within valid limits (not negative and not exceeding capacity).
+    Status check_delta(int available, int capacity, int delta, const std::string& code) {
+        const int next = available + delta;
+        
+        // Can't go negative
+        if (next < 0) {
+            return make_failure(code, "Inventory cannot drop below zero");
+        }
+        
+        // Can't exceed capacity
+        if (next > capacity) {
+            return make_failure(code, "Inventory cannot exceed capacity");
+        }
+        
+        return make_success();
     }
 }
 
-}
-
+// Function: initialize_inventory
+// Purpose: Initializes flight capacity and available seats for all flights.
 Status initialize_inventory(const std::vector<Flight>& flights,
                            int economy_capacity,
                            int business_capacity,
@@ -69,6 +87,9 @@ Status initialize_inventory(const std::vector<Flight>& flights,
     
     return make_success();
 }
+
+// Function: check_availability
+// Purpose: Checks if seats are available in the specified class for a flight.
 Status check_availability(const std::string& flight_id, SeatClass seat_class) {
     
     // STEP 1: Find flight in inventory
@@ -92,7 +113,8 @@ Status check_availability(const std::string& flight_id, SeatClass seat_class) {
     return make_success();  // Seats available!
 }
 
-
+// Function: update_inventory
+// Purpose: Updates the seat availability count dynamically.
 Status update_inventory(const InventoryUpdate& update) {
     
     // Find flight
@@ -104,25 +126,7 @@ Status update_inventory(const InventoryUpdate& update) {
     
     InventoryState& state = it->second;
 
-    // Lambda to validate a single class change
-    auto check_delta = [&](int available, int capacity, int delta, 
-                          const std::string& code) -> Status {
-        const int next = available + delta;
-        
-        // Can't go negative
-        if (next < 0) {
-            return make_failure(code, "Inventory cannot drop below zero");
-        }
-        
-        // Can't exceed capacity
-        if (next > capacity) {
-            return make_failure(code, "Inventory cannot exceed capacity");
-        }
-        
-        return make_success();
-    };
-
-    // Validate all three classes BEFORE applying any changes
+    // Validate all three classes BEFORE applying any changes using the helper function
     Status status = check_delta(state.economy_available, 
                                state.economy_capacity, 
                                update.economy_delta, 
@@ -149,6 +153,8 @@ Status update_inventory(const InventoryUpdate& update) {
     return make_success();
 }
 
+// Function: reserve_seat
+// Purpose: Reserves a specific seat on a flight if it's not already occupied.
 Status reserve_seat(const std::string& flight_id, const std::string& seat_number) {
     
     // STEP 1: Validate seat format (using validator from Member 5)
@@ -177,6 +183,9 @@ Status reserve_seat(const std::string& flight_id, const std::string& seat_number
     seat_map[seat_number] = true;
     return make_success();
 }
+
+// Function: is_seat_taken
+// Purpose: Returns true if a specific seat on a flight is already reserved.
 bool is_seat_taken(const std::string& flight_id, const std::string& seat_number) {
     
     // Try to find flight
@@ -193,7 +202,8 @@ bool is_seat_taken(const std::string& flight_id, const std::string& seat_number)
            && seat_it->second;
 }
 
-
+// Function: get_inventory_snapshot
+// Purpose: Retrieves a snapshot of the current seat capacity and availability.
 InventorySnapshot get_inventory_snapshot(const std::string& flight_id) {
     
     auto it = g_inventory.find(flight_id);
