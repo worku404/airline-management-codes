@@ -1,11 +1,13 @@
 /*
-Worku wondoson
-ETS 1459/17
+Worku Wondoson
+ETS1459/17
 */
 
 #include "controller.h"
 
-// The entry point of the airline management system.
+// Program entry point.
+// initialize_system sets up flights and loads any saved data.
+// run_repl starts the interactive command-line menu loop.
 int main() {
     initialize_system();
     run_repl();
