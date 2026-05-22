@@ -8,13 +8,13 @@ ETS1292/17
 #include <algorithm>
 #include <cctype>
 #include <ctime>
-#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
 
 #include "airport_registry.h"
 #include "flight_manager.h"
+#include "validator.h"
 
 namespace {
 constexpr int kSecondsPerDay = 24 * 60 * 60;
@@ -64,26 +64,6 @@ std::time_t parse_date(const std::string& date_str) {
     return result == -1 ? -1 : result;
 }
 
-// Helper: Validates if a date string adheres strictly to the YYYY-MM-DD format.
-bool is_valid_date_format(const std::string& date_str) {
-    if (date_str.length() != 10) {
-        return false;
-    }
-    if (date_str[4] != '-' || date_str[7] != '-') {
-        return false;
-    }
-
-    for (size_t i = 0; i < date_str.length(); ++i) {
-        if (i == 4 || i == 7) {
-            continue;
-        }
-        if (!std::isdigit(static_cast<unsigned char>(date_str[i]))) {
-            return false;
-        }
-    }
-    return true;
-}
-
 // Helper: Determines if the specified timestamp represents today or a future date.
 bool is_date_future(std::time_t timestamp) {
     const std::time_t now = std::time(nullptr);
@@ -110,26 +90,6 @@ std::string format_date(std::time_t timestamp) {
     return buffer;
 }
 
-// Helper: Parses a numeric string into an integer manually without exceptions.
-bool try_parse_int(const std::string& value, int& out) {
-    if (value.empty()) {
-        return false;
-    }
-    for (char ch : value) {
-        if (!std::isdigit(static_cast<unsigned char>(ch))) {
-            return false;
-        }
-    }
-    long long val = 0;
-    for (char ch : value) {
-        val = val * 10 + (ch - '0');
-        if (val > 1000000) {
-            return false;
-        }
-    }
-    out = static_cast<int>(val);
-    return true;
-}
 }
 
 // Function: get_airport_from_user
@@ -201,11 +161,6 @@ std::time_t get_date_from_user(const std::string& prompt_text) {
 
         if (date_input.empty()) {
             std::cout  << "Date cannot be empty.\n";
-            continue;
-        }
-
-        if (!is_valid_date_format(date_input)) {
-            std::cout << "Invalid format. Use YYYY-MM-DD.\n" ;
             continue;
         }
 

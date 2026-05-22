@@ -91,3 +91,25 @@ bool is_valid_seat_number(const std::string& seat_number) {
 bool is_valid_baggage_count(int baggage_count) {
     return baggage_count >= 0 && baggage_count <= 5;
 }
+
+// Function: try_parse_int
+// Purpose: Parses a non-negative integer from a digit-only string without exceptions.
+bool try_parse_int(const std::string& value, int& out) {
+    if (value.empty()) {
+        return false;
+    }
+    for (char ch : value) {
+        if (!std::isdigit(static_cast<unsigned char>(ch))) {
+            return false;
+        }
+    }
+    long long val = 0;
+    for (char ch : value) {
+        val = val * 10 + (ch - '0');
+        if (val > 1000000) {
+            return false;
+        }
+    }
+    out = static_cast<int>(val);
+    return true;
+}

@@ -20,7 +20,7 @@ struct Flight {
     Money base_price;
     std::string status;
 };
-//origin_iata, destination_iata
+
 struct SearchCriteria {
     std::string origin;
     std::string destination;
@@ -28,17 +28,13 @@ struct SearchCriteria {
     std::time_t date_window_end;
 };
 
-struct FlightQueryResult {
-    std::vector<Flight> available_flights;
-    Status status;
-};
+// Normalizes a raw status input string into one of the four canonical values:
+// "On Time", "Delayed", "Boarding", "Cancelled". Returns empty string if unrecognized.
+std::string canonicalize_flight_status(const std::string& input);
 
 Status add_flight(const Flight& flight);
-
-FlightQueryResult search_flights(const SearchCriteria& criteria);
-
+std::vector<Flight> search_flights(const SearchCriteria& criteria);
 const Flight* find_flight(const std::string& flight_id);
-
 Status set_flight_status(const std::string& flight_id, const std::string& new_status);
 const std::vector<Flight>& get_flight_registry();
 int count_flights_with_status(const std::string& status);

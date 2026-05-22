@@ -1,30 +1,23 @@
 /*
-
 Yared Tsehaye
 ETS1488/17
-
-
 */
-
 #pragma once
-
 #include <string>
-
 #include "common_types.h"
 
+// BoardingPass: issued to a passenger at check-in
 struct BoardingPass {
     std::string pnr_id;
-    std::string gate;
-    int boarding_group;
+    std::string gate;           // e.g. "G1"
+    int         boarding_group; // 1=First, 2=Business, 3=Economy
 };
 
+// CheckInResult: returned by check_in_passenger
 struct CheckInResult {
     BoardingPass pass;
-    Status status;
-    int baggage_count;
+    Status       status;
+    int          baggage_count;
 };
 
-CheckInResult process_check_in(const std::string& pnr_id, int baggage_count);
-Status update_flight_status(const std::string& flight_id, const std::string& new_status);
-int get_total_checkins();
-int get_total_boarded();
+CheckInResult check_in_passenger(const std::string& pnr_id, int baggage_count);

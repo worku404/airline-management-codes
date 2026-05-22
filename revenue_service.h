@@ -1,23 +1,15 @@
-//Yared Tsehaye
-/*ETS1488/17*/
-
-
-
+/*
+Yared Tsehaye
+ETS1488/17
+*/
 #pragma once
-
-#include <string>
-#include <vector>
-
 #include "common_types.h"
 
-struct RevenueAuditResult {
-    long long computed_total;
-    long long recorded_total;
-    Status status;
-};
-
+// Calculates the ticket price based on how full the flight is.
+// High demand (<=10% seats left): 1.5x price
+// Moderate demand (<=25% seats left): 1.2x price
+// Normal: base price
 Money calculate_dynamic_price(const Money& base_price,
                               int remaining_seats,
                               int total_capacity,
                               Status& status);
-RevenueAuditResult audit_revenue(const std::vector<Money>& booking_totals, long long recorded_total);

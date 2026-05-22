@@ -42,7 +42,6 @@ namespace {
         
         {"DXB", "Dubai", "Dubai International Airport"},
         {"AUH", "Abu Dhabi", "Abu Dhabi International Airport"},
-        {"DXB", "Dubai", "Dubai International Airport"},  // Note: Some cities have multiple
         {"DOH", "Doha", "Hamad International Airport"},
         
         // ====================================================================
@@ -102,49 +101,14 @@ namespace {
         {"GIG", "Rio de Janeiro", "Rio de Janeiro International Airport"},
         {"GRU", "São Paulo", "São Paulo International Airport"},
     };
-    // No longer using fixed AIRPORT_COUNT since AIRPORTS is a vector.
 }
 
 
 
 // Function: list_all_airports
 // Purpose: Returns a list of all registered airports in the system.
-std::vector<AirportInfo> list_all_airports() {
-    
+const std::vector<AirportInfo>& list_all_airports() {
     return AIRPORTS;
-}
-
-// Function: find_airport_by_iata
-// Purpose: Finds a registered airport using its 3-letter IATA code.
-const AirportInfo* find_airport_by_iata(const std::string& iata_code) {
-    to_upper(iata_code);
-    for (size_t i = 0; i < AIRPORTS.size(); ++i) {
-        
-        if (AIRPORTS[i].iata_code == iata_code) {
-            return &AIRPORTS[i];
-        }
-    }
-    
-    // No match found
-    return nullptr;
-}
-
-// Function: find_airports_by_city_name
-// Purpose: Finds all registered airports located in a specific city.
-std::vector<AirportInfo> find_airports_by_city_name(
-    const std::string& city_name) {
-    to_upper(city_name);
-
-    std::vector<AirportInfo> results;
-    
-    for (size_t i = 0; i < AIRPORTS.size(); ++i) {
-        
-        if (AIRPORTS[i].city_name == city_name) {
-            results.push_back(AIRPORTS[i]);
-        }
-    }
-    
-    return results;
 }
 
 // Function: get_airport_display_string
